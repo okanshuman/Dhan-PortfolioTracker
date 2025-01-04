@@ -57,11 +57,18 @@
         .loss {
             background-color: lightcoral; /* Light red for loss */
         }
+
+        img.logo {
+            max-width: 200px; /* Adjust size as needed */
+            height: auto; /* Maintain aspect ratio */
+            margin-bottom: 20px; /* Space below the image */
+        }
         
     </style>
 </head>
 <body>
-    <h1>Stock Tracker</h1>
+    <!-- Replace h1 with an image -->
+    <img src="{{ url_for('static', filename='dhanicon.png') }}" alt="Stock Tracker Logo" class="logo">
 
     {% if records %}
         <div class="top-right">
@@ -70,7 +77,7 @@
         
         <h2>Stocks on {{ date }}</h2>
         
-        <p>Total Count of Stocks: {{ total_count }} | Total Profit/Loss: {{ total_profit_loss|round(2) }}</p> <!-- Display Total Count and Profit/Loss -->
+        <p>Total Count of Stocks: {{ total_count }}</p> <!-- Display Total Count only -->
         
         <!-- Container for both tables -->
         <div class="container">
@@ -79,10 +86,9 @@
             <div class="table-container">
                 <table border="1" style="width: 100%;">
                     <tr>
-                        <th colspan="6" style="text-align: center;">Stocks Holding Summary</th>
+                        <th colspan="5" style="text-align: center;">Stocks Holding Summary</th>
                     </tr>
                     <tr>
-                        <th>Date</th>
                         <th>Trading Symbol</th>
                         <th>Total Quantity</th>
                         <th>Average Cost Price</th>
@@ -92,7 +98,6 @@
                     {% for record in records %}
                     {% set profit_loss = record[5] %}
                     <tr class="{% if profit_loss > 0 %}profit{% elif profit_loss < 0 %}loss{% endif %}">
-                        <td>{{ record[0] }}</td> <!-- Date -->
                         <td>{{ record[1] }}</td> <!-- Trading Symbol -->
                         <td>{{ record[2] }}</td> <!-- Total Quantity -->
                         <td>{{ record[3] }}</td> <!-- Average Cost Price -->
