@@ -54,8 +54,15 @@ def fetch_and_store_data():
     else:
         print("Failed to retrieve holdings or no data available.")
 
-# Schedule the job every day at 3 PM IST
-schedule.every().day.at("13:06").do(fetch_and_store_data)
+def job():
+    # Check if today is a weekday (Monday to Friday)
+    if datetime.now().weekday() < 5:  # Monday is 0 and Sunday is 6
+        fetch_and_store_data()
+    else:
+        print("Today is a weekend. Skipping data fetch.")
+
+# Schedule the job every day at 3:27 PM IST
+schedule.every().day.at("15:27").do(job)
 
 print("Scheduler started. Waiting for scheduled time...")
 

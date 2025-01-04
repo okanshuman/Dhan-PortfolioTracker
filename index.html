@@ -77,8 +77,6 @@
         
         <h2>Stocks on {{ date }}</h2>
         
-        <p>Total Count of Stocks: {{ total_count }}</p> <!-- Display Total Count only -->
-        
         <!-- Container for both tables -->
         <div class="container">
             
@@ -115,23 +113,34 @@
                          <th colspan="2" style="text-align: center;">Consolidated Performance</th>
                      </tr>
                      <tr>
-                         <th>Total Profitable Stocks</th>
-                         <td>{{ total_profit_count }}</td>
+                         <th>Total Stocks</th> <!-- Added Total Count Row -->
+                         <td>{{ total_count }}</td> <!-- Display Total Count here -->
+                     </tr>
+                     {% if total_count > 0 %}
+                     {% set profit_percentage = (total_profit_count / total_count) * 100 %}
+                     {% set loss_percentage = (total_loss_count / total_count) * 100 %}
+                     {% else %}
+                     {% set profit_percentage = 0 %}
+                     {% set loss_percentage = 0 %}
+                     {% endif %}
+                     <tr>
+                         <th>Profitable Stocks</th>
+                         <td>{{ total_profit_count }} ({{ profit_percentage|round(2) }}%)</td> <!-- Added percentage -->
                      </tr>
                      <tr>
-                         <th>Total Losing Stocks</th>
-                         <td>{{ total_loss_count }}</td>
+                         <th>Losing Stocks</th>
+                         <td>{{ total_loss_count }} ({{ loss_percentage|round(2) }}%)</td> <!-- Added percentage -->
                      </tr>
                      <tr>
-                         <th>Total Profit</th>
+                         <th>Consolidated Profits</th>
                          <td>{{ total_profit|round(2) }}</td>
                      </tr>
                      <tr>
-                         <th>Total Loss</th>
+                         <th>Consolidated Losses</th>
                          <td>{{ total_loss|round(2) }}</td>
                      </tr>
                      <tr>
-                         <th>Total Profit/Loss</th>
+                         <th>Overall Profit/Loss</th>
                          <td>{{ total_profit_loss|round(2) }}</td> <!-- Existing Total Profit/Loss -->
                      </tr>
                  </table>
