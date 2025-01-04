@@ -44,6 +44,7 @@
                 <th>Trading Symbol</th>
                 <th>Previous Quantity</th>
                 <th>Current Quantity</th>
+                <th>Action</th> <!-- New Column for Action -->
             </tr>
             {% for change in quantity_changes %}
             <tr>
@@ -52,6 +53,15 @@
                 <td>{{ change[2] }}</td>  <!-- Trading Symbol -->
                 <td>{{ change[3] }}</td>  <!-- Previous Quantity -->
                 <td>{{ change[4] }}</td>  <!-- Current Quantity -->
+                <td>
+                    <!-- Form to mark as buy/sell -->
+                    <form method="POST" action="{{ url_for('mark_change') }}">
+                        <input type="hidden" name="trading_symbol" value="{{ change[2] }}">
+                        <input type="hidden" name="previous_date" value="{{ change[0] }}">
+                        <input type="hidden" name="current_date" value="{{ change[1] }}">
+                        <button type="submit">Mark as Buy/Sell</button>
+                    </form>
+                </td>
             </tr>
             {% endfor %}
         </table>

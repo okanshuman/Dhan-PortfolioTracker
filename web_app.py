@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 import psycopg2
 from collections import defaultdict
 
@@ -61,9 +61,6 @@ def quantity_changes():
     cursor.execute("SELECT * FROM stock_holding_dhan ORDER BY date ASC")
     records = cursor.fetchall()
 
-    cursor.close()
-    conn.close()
-
     # Organize data by trading symbol and date
     data_by_symbol = defaultdict(lambda: defaultdict(list))
     for record in records:
@@ -84,14 +81,41 @@ def quantity_changes():
             current_qty = dates[date][0]  # Get current quantity for that date
             
             if previous_date is not None:
-                # Only append if there is a change in quantity
-                if previous_qty != current_qty:
+                # Only append if there is a change in quantity and not marked as buy/sell
+                cursor.execute("SELECT * FROM stock_holding_dhan_portfolio_updates WHERE trading_symbol=%s AND previous_date=%s AND change_date=%s",
+                               (symbol, previous_date, date))
+                marked_record = cursor.fetchone()
+
+                if previous_qty != current_qty and marked_record is None:
                     quantity_changes_list.append((previous_date, date, symbol, previous_qty, current_qty))
             
             previous_date = date  # Update previous date for next iteration
             previous_qty = current_qty  # Update previous quantity for next iteration
 
+    cursor.close()  # Close the cursor here after all operations are done.
+    conn.close()  # Close the connection.
+
     return render_template('index.html', quantity_changes=quantity_changes_list)
+
+@app.route('/mark_change', methods=['POST'])
+def mark_change():
+    trading_symbol = request.form['trading_symbol']
+    previous_date = request.form['previous_date']
+    change_date = request.form['current_date']  # Updated variable name
+
+    conn = psycopg2.connect(**db_params)
+    cursor = conn.cursor()
+
+    # Insert into stock_holding_dhan_portfolio_updates table to mark this change as buy/sell
+    cursor.execute("INSERT INTO stock_holding_dhan_portfolio_updates (trading_symbol, previous_date, change_date) VALUES (%s, %s, %s)",
+                   (trading_symbol, previous_date, change_date))
+    
+    conn.commit()
+    
+    cursor.close()
+    conn.close()
+
+    return redirect(url_for('quantity_changes'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5003)  # Change host to 0.0.0.0 if needed.

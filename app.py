@@ -55,7 +55,7 @@ def fetch_and_store_data():
         print("Failed to retrieve holdings or no data available.")
 
 # Schedule the job every day at 3 PM IST
-schedule.every().day.at("15:00").do(fetch_and_store_data)
+schedule.every().day.at("12:20").do(fetch_and_store_data)
 
 print("Scheduler started. Waiting for scheduled time...")
 
