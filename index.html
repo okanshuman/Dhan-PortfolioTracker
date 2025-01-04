@@ -10,6 +10,7 @@
 
     {% if records %}
         <h2>Stocks on {{ date }}</h2>
+        <p>Total Count of Stocks: {{ total_count }}</p> <!-- Display Total Count -->
         <table border="1">
             <tr>
                 <th>Date</th>
@@ -17,14 +18,16 @@
                 <th>Total Quantity</th>
                 <th>Average Cost Price</th>
                 <th>Last Traded Price</th>
+                <th>Profit/Loss</th> <!-- New Column -->
             </tr>
             {% for record in records %}
             <tr>
-                <td>{{ record[1] }}</td> <!-- Date -->
-                <td>{{ record[2] }}</td> <!-- Trading Symbol -->
-                <td>{{ record[3] }}</td> <!-- Total Quantity -->
-                <td>{{ record[4] }}</td> <!-- Average Cost Price -->
-                <td>{{ record[5] }}</td> <!-- Last Traded Price -->
+                <td>{{ record[0] }}</td> <!-- Date -->
+                <td>{{ record[1] }}</td> <!-- Trading Symbol -->
+                <td>{{ record[2] }}</td> <!-- Total Quantity -->
+                <td>{{ record[3] }}</td> <!-- Average Cost Price -->
+                <td>{{ record[4] }}</td> <!-- Last Traded Price -->
+                <td>{{ record[5]|round(2) }}</td> <!-- Profit/Loss -->
             </tr>
             {% endfor %}
         </table>

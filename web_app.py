@@ -1,4 +1,3 @@
-# web_app.py
 from flask import Flask, render_template, request
 import psycopg2
 from collections import defaultdict
@@ -23,9 +22,26 @@ def index():
         selected_date = request.form['date']
         cursor.execute("SELECT * FROM stock_holding_dhan WHERE date = %s ORDER BY trading_symbol ASC", (selected_date,))
         records = cursor.fetchall()
+        
+        # Calculate profit/loss for each stock
+        stocks_with_profit_loss = []
+        for record in records:
+            date = record[1]  # Date
+            trading_symbol = record[2]  # Trading Symbol
+            total_qty = record[3]  # Total Quantity
+            avg_cost_price = record[4]  # Average Cost Price
+            last_traded_price = record[5]  # Last Traded Price
+            
+            # Calculate Profit/Loss
+            profit_loss = (last_traded_price - avg_cost_price) * total_qty
+            
+            stocks_with_profit_loss.append((date, trading_symbol, total_qty, avg_cost_price, last_traded_price, profit_loss))
+        
+        total_count = len(stocks_with_profit_loss)  # Count of stocks
+        
         cursor.close()
         conn.close()
-        return render_template('index.html', records=records, date=selected_date)
+        return render_template('index.html', records=stocks_with_profit_loss, date=selected_date, total_count=total_count)
 
     # Fetch all unique dates from the database for the home page
     cursor.execute("SELECT DISTINCT date FROM stock_holding_dhan ORDER BY date ASC")
@@ -68,7 +84,9 @@ def quantity_changes():
             current_qty = dates[date][0]  # Get current quantity for that date
             
             if previous_date is not None:
-                quantity_changes_list.append((previous_date, date, symbol, previous_qty, current_qty))
+                # Only append if there is a change in quantity
+                if previous_qty != current_qty:
+                    quantity_changes_list.append((previous_date, date, symbol, previous_qty, current_qty))
             
             previous_date = date  # Update previous date for next iteration
             previous_qty = current_qty  # Update previous quantity for next iteration
