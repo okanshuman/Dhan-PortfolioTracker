@@ -3,38 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stocks Quantity Changes</title>
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-    </style>
+    <title>Stock Tracker</title>
 </head>
 <body>
-    <h1>Stocks Quantity Changes</h1>
-    
-    <table border="1">
-        <tr>
-            <th>Trading Symbol</th>
-            <th>Previous Date : Quantity</th>
-            <th>Current Date : Quantity</th>
-        </tr>
-        {% for change in quantity_changes %}
-        <tr>
-            <td>{{ change[0] }}</td>  <!-- Trading Symbol -->
-            <td>{{ change[1] }} : {{ change[2] }}</td>  <!-- Previous Date : Previous Quantity -->
-            <td>{{ change[3] }} : {{ change[4] }}</td>  <!-- Current Date : Current Quantity -->
-        </tr>
-        {% endfor %}
-    </table>
+    <h1>Stock Tracker</h1>
+
+    {% if records %}
+        <h2>Stocks on {{ date }}</h2>
+        <table border="1">
+            <tr>
+                <th>Date</th>
+                <th>Trading Symbol</th>
+                <th>Total Quantity</th>
+                <th>Average Cost Price</th>
+                <th>Last Traded Price</th>
+            </tr>
+            {% for record in records %}
+            <tr>
+                <td>{{ record[1] }}</td> <!-- Date -->
+                <td>{{ record[2] }}</td> <!-- Trading Symbol -->
+                <td>{{ record[3] }}</td> <!-- Total Quantity -->
+                <td>{{ record[4] }}</td> <!-- Average Cost Price -->
+                <td>{{ record[5] }}</td> <!-- Last Traded Price -->
+            </tr>
+            {% endfor %}
+        </table>
+
+        <h2><a href="{{ url_for('index') }}">Back to Home</a></h2>
+
+    {% elif quantity_changes %}
+        <h2>Stocks Quantity Changes</h2>
+        
+        <table border="1">
+            <tr>
+                <th>Previous Date</th>
+                <th>Current Date</th>
+                <th>Trading Symbol</th>
+                <th>Previous Quantity</th>
+                <th>Current Quantity</th>
+            </tr>
+            {% for change in quantity_changes %}
+            <tr>
+                <td>{{ change[0] }}</td>  <!-- Previous Date -->
+                <td>{{ change[1] }}</td>  <!-- Current Date -->
+                <td>{{ change[2] }}</td>  <!-- Trading Symbol -->
+                <td>{{ change[3] }}</td>  <!-- Previous Quantity -->
+                <td>{{ change[4] }}</td>  <!-- Current Quantity -->
+            </tr>
+            {% endfor %}
+        </table>
+
+        <h2><a href="{{ url_for('index') }}">Back to Home</a></h2>
+
+    {% else %}
+        <h2>Select a Date:</h2>
+        
+        <form method="POST" action="/">
+            <ul>
+                {% for date in dates %}
+                    <li><button type="submit" name="date" value="{{ date[0] }}">{{ date[0] }}</button></li>
+                {% endfor %}
+            </ul>
+        </form>
+
+        <h2><a href="{{ url_for('quantity_changes') }}">Stocks Quantity Changes</a></h2>
+    {% endif %}
 </body>
 </html>
