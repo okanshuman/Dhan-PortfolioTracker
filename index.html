@@ -22,12 +22,27 @@
             top: 20px; /* Adjust as needed */
             right: 20px; /* Adjust as needed */
         }
+        .summary-table {
+            margin-top: 20px; /* Space above summary table */
+            float: right; /* Aligns summary table to the right */
+            border-collapse: collapse;
+            border: solid black;
+        }
+        .summary-table th,
+        .summary-table td {
+            border: solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        
         .profit {
             background-color: lightgreen; /* Light green for profit */
         }
+        
         .loss {
             background-color: lightcoral; /* Light red for loss */
         }
+        
     </style>
 </head>
 <body>
@@ -39,9 +54,14 @@
         </div>
         
         <h2>Stocks on {{ date }}</h2>
+        
         <p>Total Count of Stocks: {{ total_count }} | Total Profit/Loss: {{ total_profit_loss|round(2) }}</p> <!-- Display Total Count and Profit/Loss -->
         
+        <!-- Stocks Holding Summary Table -->
         <table border="1">
+            <tr>
+                <th colspan="6" style="text-align: center;">Stocks Holding Summary</th>
+            </tr>
             <tr>
                 <th>Date</th>
                 <th>Trading Symbol</th>
@@ -63,59 +83,92 @@
             {% endfor %}
         </table>
 
-    {% elif quantity_changes %}
-        <div class="top-right">
-            <h2><a href="{{ url_for('index') }}">Back to Home</a></h2>
-        </div>
+         <!-- Consolidated Performance Table -->
+         <table class="summary-table">
+             <tr>
+                 <th colspan="2" style="text-align: center;">Consolidated Performance</th>
+             </tr>
+             <tr>
+                 <th>Total Profitable Stocks</th>
+                 <td>{{ total_profit_count }}</td>
+             </tr>
+             <tr>
+                 <th>Total Losing Stocks</th>
+                 <td>{{ total_loss_count }}</td>
+             </tr>
+             <tr>
+                 <th>Total Profit</th>
+                 <td>{{ total_profit|round(2) }}</td>
+             </tr>
+             <tr>
+                 <th>Total Loss</th>
+                 <td>{{ total_loss|round(2) }}</td>
+             </tr>
+             <tr>
+                 <th>Total Profit/Loss</th>
+                 <td>{{ total_profit_loss|round(2) }}</td> <!-- Existing Total Profit/Loss -->
+             </tr>
+         </table>
 
-        <h2>Stocks Quantity Changes</h2>
-        
-        <table border="1">
-            <tr>
-                <th>Previous Date</th>
-                <th>Current Date</th>
-                <th>Trading Symbol</th>
-                <th>Previous Quantity</th>
-                <th>Current Quantity</th>
-                <th>Action</th> <!-- New Column for Action -->
-            </tr>
-            {% for change in quantity_changes %}
-            <tr>
-                <td>{{ change[0] }}</td>  <!-- Previous Date -->
-                <td>{{ change[1] }}</td>  <!-- Current Date -->
-                <td>{{ change[2] }}</td>  <!-- Trading Symbol -->
-                <td>{{ change[3] }}</td>  <!-- Previous Quantity -->
-                <td>{{ change[4] }}</td>  <!-- Current Quantity -->
-                <td>
-                    <!-- Form to mark as buy/sell -->
-                    <form method="POST" action="{{ url_for('mark_change') }}">
-                        <input type="hidden" name="trading_symbol" value="{{ change[2] }}">
-                        <input type="hidden" name="previous_date" value="{{ change[0] }}">
-                        <input type="hidden" name="current_date" value="{{ change[1] }}">
-                        <button type="submit">Mark as Buy/Sell</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
+     {% elif quantity_changes %}
+         <div class="top-right">
+             <h2><a href="{{ url_for('index') }}">Back to Home</a></h2>
+         </div>
 
-    {% else %}
-        <!-- Dropdown for selecting a date next to the label -->
-        <div class="inline">
-            <label for="date">Select a Date:</label>
-            <form id="dateForm" method="POST" action="/">
-                <select name="date" id="date" onchange="submitForm()">
-                    <option value="" selected disabled hidden>Date</option> <!-- Default option -->
-                    {% for date in dates %}
-                        <option value="{{ date[0] }}">{{ date[0] }}</option>
-                    {% endfor %}
-                </select>
-            </form>
-        </div>
+         <h2>Stocks Quantity Changes</h2>
 
-        <!-- No Back to Home link here as there's no data yet -->
+         <!-- Quantity Changes Table -->
+         <table border="1">
+             <tr>
+                 <th colspan="6" style="text-align: center;">Stocks Quantity Changes</th>
+             </tr>
+             <tr>
+                 <th>Previous Date</th>
+                 <th>Current Date</th>
+                 <th>Trading Symbol</th>
+                 <th>Previous Quantity</th>
+                 <th>Current Quantity</th>
+                 <th>Action</th> <!-- New Column for Action -->
+             </tr>
+             {% for change in quantity_changes %}
+             <tr>
+                 <td>{{ change[0] }}</td>  <!-- Previous Date -->
+                 <td>{{ change[1] }}</td>  <!-- Current Date -->
+                 <td>{{ change[2] }}</td>  <!-- Trading Symbol -->
+                 <td>{{ change[3] }}</td>  <!-- Previous Quantity -->
+                 <td>{{ change[4] }}</td>  <!-- Current Quantity -->
+                 <td>
+                     <!-- Form to mark as buy/sell -->
+                     <form method="POST" action="{{ url_for('mark_change') }}">
+                         <input type="hidden" name="trading_symbol" value="{{ change[2] }}">
+                         <input type="hidden" name="previous_date" value="{{ change[0] }}">
+                         <input type="hidden" name="current_date" value="{{ change[1] }}">
+                         <button type="submit">Mark as Buy/Sell</button>
+                     </form>
+                 </td>
+             </tr>
+             {% endfor %}
+         </table>
 
-        <h2><a href="{{ url_for('quantity_changes') }}">Stocks Quantity Changes</a></h2>
-    {% endif %}
+     {% else %}
+         <!-- Dropdown for selecting a date next to the label -->
+         <div class="inline">
+             <label for="date">Select a Date:</label>
+             <form id="dateForm" method="POST" action="/">
+                 <select name="date" id="date" onchange="submitForm()">
+                     <option value="" selected disabled hidden>Date</option> <!-- Default option -->
+                     {% for date in dates %}
+                         <option value="{{ date[0] }}">{{ date[0] }}</option>
+                     {% endfor %}
+                 </select>
+             </form>
+         </div>
+
+         <!-- No Back to Home link here as there's no data yet -->
+
+         <h2><a href="{{ url_for('quantity_changes') }}">Stocks Quantity Changes</a></h2>
+
+     {% endif %}
 </body>
 </html>
+

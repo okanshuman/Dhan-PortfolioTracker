@@ -26,6 +26,10 @@ def index():
         # Calculate profit/loss for each stock and total profit/loss
         stocks_with_profit_loss = []
         total_profit_loss = 0  # Initialize total profit/loss
+        total_profit_count = 0  # Count of profitable stocks
+        total_loss_count = 0  # Count of losing stocks
+        total_profit = 0  # Total profit from profitable stocks
+        total_loss = 0  # Total loss from losing stocks
         
         for record in records:
             date = record[1]  # Date
@@ -39,13 +43,22 @@ def index():
             
             stocks_with_profit_loss.append((date, trading_symbol, total_qty, avg_cost_price, last_traded_price, profit_loss))
             total_profit_loss += profit_loss  # Accumulate total profit/loss
+            
+            if profit_loss > 0:
+                total_profit_count += 1
+                total_profit += profit_loss  # Accumulate total profit from profitable stocks
+            elif profit_loss < 0:
+                total_loss_count += 1
+                total_loss += abs(profit_loss)  # Accumulate total loss from losing stocks
         
         total_count = len(stocks_with_profit_loss)  # Count of stocks
         
         cursor.close()
         conn.close()
         return render_template('index.html', records=stocks_with_profit_loss, date=selected_date, 
-                               total_count=total_count, total_profit_loss=total_profit_loss)
+                               total_count=total_count, total_profit_loss=total_profit_loss,
+                               total_profit_count=total_profit_count, total_loss_count=total_loss_count,
+                               total_profit=total_profit, total_loss=total_loss)
 
     # Fetch all unique dates from the database for the home page
     cursor.execute("SELECT DISTINCT date FROM stock_holding_dhan ORDER BY date ASC")
