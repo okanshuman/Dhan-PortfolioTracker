@@ -10,6 +10,23 @@
         }
     </script>
     <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            display: flex; /* Use flexbox to arrange tables side by side */
+            justify-content: space-between; /* Space between the tables */
+            width: 100%; /* Full width */
+            max-width: 1200px; /* Max width for larger screens */
+            margin-top: 20px; /* Space above the container */
+        }
+        .table-container {
+            width: 48%; /* Each table takes up 48% of the container width */
+            border: 1px solid #000; /* Add border around each table */
+            padding: 10px; /* Padding inside each table container */
+        }
         .inline {
             display: flex;
             align-items: center; /* Aligns items vertically in the center */
@@ -24,9 +41,7 @@
         }
         .summary-table {
             margin-top: 20px; /* Space above summary table */
-            float: right; /* Aligns summary table to the right */
             border-collapse: collapse;
-            border: solid black;
         }
         .summary-table th,
         .summary-table td {
@@ -57,58 +72,67 @@
         
         <p>Total Count of Stocks: {{ total_count }} | Total Profit/Loss: {{ total_profit_loss|round(2) }}</p> <!-- Display Total Count and Profit/Loss -->
         
-        <!-- Stocks Holding Summary Table -->
-        <table border="1">
-            <tr>
-                <th colspan="6" style="text-align: center;">Stocks Holding Summary</th>
-            </tr>
-            <tr>
-                <th>Date</th>
-                <th>Trading Symbol</th>
-                <th>Total Quantity</th>
-                <th>Average Cost Price</th>
-                <th>Last Traded Price</th>
-                <th>Profit/Loss</th> <!-- New Column -->
-            </tr>
-            {% for record in records %}
-            {% set profit_loss = record[5] %}
-            <tr class="{% if profit_loss > 0 %}profit{% elif profit_loss < 0 %}loss{% endif %}">
-                <td>{{ record[0] }}</td> <!-- Date -->
-                <td>{{ record[1] }}</td> <!-- Trading Symbol -->
-                <td>{{ record[2] }}</td> <!-- Total Quantity -->
-                <td>{{ record[3] }}</td> <!-- Average Cost Price -->
-                <td>{{ record[4] }}</td> <!-- Last Traded Price -->
-                <td>{{ profit_loss|round(2) }}</td> <!-- Profit/Loss -->
-            </tr>
-            {% endfor %}
-        </table>
+        <!-- Container for both tables -->
+        <div class="container">
+            
+            <!-- Stocks Holding Summary Table -->
+            <div class="table-container">
+                <table border="1" style="width: 100%;">
+                    <tr>
+                        <th colspan="6" style="text-align: center;">Stocks Holding Summary</th>
+                    </tr>
+                    <tr>
+                        <th>Date</th>
+                        <th>Trading Symbol</th>
+                        <th>Total Quantity</th>
+                        <th>Average Cost Price</th>
+                        <th>Last Traded Price</th>
+                        <th>Profit/Loss</th> <!-- New Column -->
+                    </tr>
+                    {% for record in records %}
+                    {% set profit_loss = record[5] %}
+                    <tr class="{% if profit_loss > 0 %}profit{% elif profit_loss < 0 %}loss{% endif %}">
+                        <td>{{ record[0] }}</td> <!-- Date -->
+                        <td>{{ record[1] }}</td> <!-- Trading Symbol -->
+                        <td>{{ record[2] }}</td> <!-- Total Quantity -->
+                        <td>{{ record[3] }}</td> <!-- Average Cost Price -->
+                        <td>{{ record[4] }}</td> <!-- Last Traded Price -->
+                        <td>{{ profit_loss|round(2) }}</td> <!-- Profit/Loss -->
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
 
-         <!-- Consolidated Performance Table -->
-         <table class="summary-table">
-             <tr>
-                 <th colspan="2" style="text-align: center;">Consolidated Performance</th>
-             </tr>
-             <tr>
-                 <th>Total Profitable Stocks</th>
-                 <td>{{ total_profit_count }}</td>
-             </tr>
-             <tr>
-                 <th>Total Losing Stocks</th>
-                 <td>{{ total_loss_count }}</td>
-             </tr>
-             <tr>
-                 <th>Total Profit</th>
-                 <td>{{ total_profit|round(2) }}</td>
-             </tr>
-             <tr>
-                 <th>Total Loss</th>
-                 <td>{{ total_loss|round(2) }}</td>
-             </tr>
-             <tr>
-                 <th>Total Profit/Loss</th>
-                 <td>{{ total_profit_loss|round(2) }}</td> <!-- Existing Total Profit/Loss -->
-             </tr>
-         </table>
+             <!-- Consolidated Performance Table -->
+             <div class="table-container">
+                 <table class="summary-table" style="width: 100%;">
+                     <tr>
+                         <th colspan="2" style="text-align: center;">Consolidated Performance</th>
+                     </tr>
+                     <tr>
+                         <th>Total Profitable Stocks</th>
+                         <td>{{ total_profit_count }}</td>
+                     </tr>
+                     <tr>
+                         <th>Total Losing Stocks</th>
+                         <td>{{ total_loss_count }}</td>
+                     </tr>
+                     <tr>
+                         <th>Total Profit</th>
+                         <td>{{ total_profit|round(2) }}</td>
+                     </tr>
+                     <tr>
+                         <th>Total Loss</th>
+                         <td>{{ total_loss|round(2) }}</td>
+                     </tr>
+                     <tr>
+                         <th>Total Profit/Loss</th>
+                         <td>{{ total_profit_loss|round(2) }}</td> <!-- Existing Total Profit/Loss -->
+                     </tr>
+                 </table>
+             </div>
+
+         </div>
 
      {% elif quantity_changes %}
          <div class="top-right">
