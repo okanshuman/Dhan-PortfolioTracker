@@ -33,7 +33,8 @@
         </div>
         
         <h2>Stocks on {{ date }}</h2>
-        <p>Total Count of Stocks: {{ total_count }}</p> <!-- Display Total Count -->
+        <p>Total Count of Stocks: {{ total_count }} | Total Profit/Loss: {{ total_profit_loss|round(2) }}</p> <!-- Display Total Count and Profit/Loss -->
+        
         <table border="1">
             <tr>
                 <th>Date</th>
