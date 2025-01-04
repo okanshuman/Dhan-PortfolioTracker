@@ -22,6 +22,12 @@
             top: 20px; /* Adjust as needed */
             right: 20px; /* Adjust as needed */
         }
+        .profit {
+            background-color: lightgreen; /* Light green for profit */
+        }
+        .loss {
+            background-color: lightcoral; /* Light red for loss */
+        }
     </style>
 </head>
 <body>
@@ -45,13 +51,14 @@
                 <th>Profit/Loss</th> <!-- New Column -->
             </tr>
             {% for record in records %}
-            <tr>
+            {% set profit_loss = record[5] %}
+            <tr class="{% if profit_loss > 0 %}profit{% elif profit_loss < 0 %}loss{% endif %}">
                 <td>{{ record[0] }}</td> <!-- Date -->
                 <td>{{ record[1] }}</td> <!-- Trading Symbol -->
                 <td>{{ record[2] }}</td> <!-- Total Quantity -->
                 <td>{{ record[3] }}</td> <!-- Average Cost Price -->
                 <td>{{ record[4] }}</td> <!-- Last Traded Price -->
-                <td>{{ record[5]|round(2) }}</td> <!-- Profit/Loss -->
+                <td>{{ profit_loss|round(2) }}</td> <!-- Profit/Loss -->
             </tr>
             {% endfor %}
         </table>
