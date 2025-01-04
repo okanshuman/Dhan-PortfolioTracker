@@ -4,11 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Tracker</title>
+    <script>
+        function submitForm() {
+            document.getElementById("dateForm").submit();
+        }
+    </script>
+    <style>
+        .inline {
+            display: flex;
+            align-items: center; /* Aligns items vertically in the center */
+        }
+        .inline label {
+            margin-right: 10px; /* Space between label and dropdown */
+        }
+        .top-right {
+            position: absolute;
+            top: 20px; /* Adjust as needed */
+            right: 20px; /* Adjust as needed */
+        }
+    </style>
 </head>
 <body>
     <h1>Stock Tracker</h1>
 
     {% if records %}
+        <div class="top-right">
+            <h2><a href="{{ url_for('index') }}">Back to Home</a></h2>
+        </div>
+        
         <h2>Stocks on {{ date }}</h2>
         <p>Total Count of Stocks: {{ total_count }}</p> <!-- Display Total Count -->
         <table border="1">
@@ -32,9 +55,11 @@
             {% endfor %}
         </table>
 
-        <h2><a href="{{ url_for('index') }}">Back to Home</a></h2>
-
     {% elif quantity_changes %}
+        <div class="top-right">
+            <h2><a href="{{ url_for('index') }}">Back to Home</a></h2>
+        </div>
+
         <h2>Stocks Quantity Changes</h2>
         
         <table border="1">
@@ -66,18 +91,21 @@
             {% endfor %}
         </table>
 
-        <h2><a href="{{ url_for('index') }}">Back to Home</a></h2>
-
     {% else %}
-        <h2>Select a Date:</h2>
-        
-        <form method="POST" action="/">
-            <ul>
-                {% for date in dates %}
-                    <li><button type="submit" name="date" value="{{ date[0] }}">{{ date[0] }}</button></li>
-                {% endfor %}
-            </ul>
-        </form>
+        <!-- Dropdown for selecting a date next to the label -->
+        <div class="inline">
+            <label for="date">Select a Date:</label>
+            <form id="dateForm" method="POST" action="/">
+                <select name="date" id="date" onchange="submitForm()">
+                    <option value="" selected disabled hidden>Date</option> <!-- Default option -->
+                    {% for date in dates %}
+                        <option value="{{ date[0] }}">{{ date[0] }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+
+        <!-- No Back to Home link here as there's no data yet -->
 
         <h2><a href="{{ url_for('quantity_changes') }}">Stocks Quantity Changes</a></h2>
     {% endif %}
