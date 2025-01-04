@@ -1,19 +1,65 @@
+# app.py
 import credentials as cr
 from dhanhq import dhanhq
+import psycopg2
+from datetime import datetime
+import schedule
+import time
 
-dhan = dhanhq(cr.clientId,cr.apiToken)
+# Initialize Dhan API client
+dhan = dhanhq(cr.clientId, cr.apiToken)
 
-holdingResponse = dhan.get_holdings()
+# Database connection parameters
+db_params = {
+    'dbname': 'stocks_db',
+    'user': 'casaos',
+    'password': 'casaos',
+    'host': 'localhost'
+}
 
-# Check if the response is successful and contains data
-if holdingResponse.get('status') == 'success' and 'data' in holdingResponse:
-    holdings = holdingResponse['data']  # Extract the holdings data
+def fetch_and_store_data():
+    holdingResponse = dhan.get_holdings()
 
-    # Filter to show only the desired fields
-    filtered_holdings = [{'Stock Name': item['tradingSymbol'], 'Quantity': item['totalQty'], 'Average Price': item['avgCostPrice'], 'Current Price': item['lastTradedPrice']} for item in holdings]
+    # Check if the response is successful and contains data
+    if holdingResponse.get('status') == 'success' and 'data' in holdingResponse:
+        holdings = holdingResponse['data']  # Extract the holdings data
+        date_today = datetime.now().date()
 
-    # Print the filtered data
-    for holding in filtered_holdings:
-        print(holding)
-else:
-    print("Failed to retrieve holdings or no data available.")
+        # Connect to PostgreSQL database
+        conn = psycopg2.connect(**db_params)
+        cursor = conn.cursor()
+
+        # Insert each holding into the database
+        for item in holdings:
+            trading_symbol = item['tradingSymbol']
+            total_qty = item['totalQty']
+            avg_cost_price = item['avgCostPrice']
+            last_traded_price = item['lastTradedPrice']
+
+            try:
+                cursor.execute("""
+                    INSERT INTO stock_holding_dhan (date, trading_symbol, total_qty, avg_cost_price, last_traded_price)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (date_today, trading_symbol, total_qty, avg_cost_price, last_traded_price))
+            except psycopg2.IntegrityError:
+                conn.rollback()  # Rollback the transaction on error
+                print(f"Duplicate entry for {trading_symbol} on {date_today}, skipping insertion.")
+            else:
+                conn.commit()  # Commit only if no error occurred
+
+        cursor.close()
+        conn.close()
+        
+        print(f"Data stored successfully for {date_today}")
+    else:
+        print("Failed to retrieve holdings or no data available.")
+
+# Schedule the job every day at 3 PM IST
+schedule.every().day.at("15:00").do(fetch_and_store_data)
+
+print("Scheduler started. Waiting for scheduled time...")
+
+# Keep running the scheduler
+while True:
+    schedule.run_pending()
+    time.sleep(60)  # wait one minute before checking again

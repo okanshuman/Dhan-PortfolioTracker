@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Holdings</title>
+</head>
+<body>
+    <h1>Stock Holdings Data</h1>
+    <table border="1">
+        <tr>
+            <th>Date</th>
+            <th>Trading Symbol</th>
+            <th>Total Quantity</th>
+            <th>Average Cost Price</th>
+            <th>Last Traded Price</th>
+        </tr>
+        {% for record in records %}
+        <tr>
+            <td>{{ record[1] }}</td>
+            <td>{{ record[2] }}</td>
+            <td>{{ record[3] }}</td>
+            <td>{{ record[4] }}</td>
+            <td>{{ record[5] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
