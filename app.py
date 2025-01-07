@@ -5,6 +5,10 @@ import psycopg2
 from datetime import datetime
 import schedule
 import time
+import requests
+
+TELEGRAM_BOT_TOKEN = "7735410242:AAEQKx8SvywtEQNviloc_YzSZkfR1pMkMU8"
+TELEGRAM_CHAT_ID = "390415235"
 
 # Initialize Dhan API client
 dhan = dhanhq(cr.clientId, cr.apiToken)
@@ -16,6 +20,22 @@ db_params = {
     'password': 'casaos',
     'host': 'localhost'
 }
+
+def send_telegram_message(message):
+    """Send a message to the specified Telegram chat."""
+    urlTelegram = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message
+    }
+    try:
+        responseTelegram = requests.post(urlTelegram, json=payload)
+        if responseTelegram.status_code == 200:
+            print("Telegram notification sent successfully.")
+        else:
+            print(f"Failed to send Telegram notification. Status code: {responseTelegram.status_code}")
+    except Exception as e:
+        print(f"Error sending Telegram message: {e}")
 
 def fetch_and_store_data():
     holdingResponse = dhan.get_holdings()
@@ -53,6 +73,7 @@ def fetch_and_store_data():
         print(f"Data stored successfully for {date_today}")
     else:
         print("Failed to retrieve holdings or no data available.")
+        send_telegram_message("DHAN: Failed to retrieve holdings or no data available.")
 
 def job():
     # Check if today is a weekday (Monday to Friday)
@@ -64,6 +85,7 @@ def job():
 # Schedule the job every day at 3:27 PM IST
 schedule.every().day.at("15:27").do(job)
 
+send_telegram_message("DHAN App Started..")
 print("Scheduler started. Waiting for scheduled time...")
 
 # Keep running the scheduler
