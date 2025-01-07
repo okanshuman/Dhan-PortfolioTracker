@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profit/Loss Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body {
+   display:flex;
+   flex-direction:column;
+   align-items:center;
+}
+
+canvas {
+   max-width:800px;
+   max-height:400px;
+}
+
+.top-right {
+   position:absolute;
+   top:20px;
+   right:20px;
+}
+   
+</style>
+
+</head>
+
+<body>
+
+<div style="height:50vh;width:80%;margin:auto;">
+   <!-- Canvas element for Chart.js line chart-->
+   <canvas id="profitLossChart"></canvas>
+
+   <!-- Chart.js script to create line chart-->
+   <<script>
+
+const labels = {{ dates | tojson }};
+const dataValues = {{ profits_losses | tojson }};
+
+const data = {
+   labels,
+   datasets: [{
+       label:'Total Profit/Loss',
+       backgroundColor:'rgba(75,192,192,0.2)',
+       borderColor:'rgba(75,192,192,1)',
+       data:dataValues,
+       fill:true,
+       tension:.1,
+   }]
+};
+
+const config={
+   type:'line',
+   data:data,
+};
+
+const profitLossChart=new Chart(
+   document.getElementById('profitLossChart'),
+   config
+);
+   </script>
+
+<h2><a href="{{ url_for('index') }}">Back to Home</a></h2>
+
+</body>
+
+</html>
+

@@ -18,40 +18,37 @@ def index():
     cursor = conn.cursor()
     
     if request.method == 'POST':
-        # Get the selected date from the form
         selected_date = request.form['date']
         cursor.execute("SELECT * FROM stock_holding_dhan WHERE date = %s ORDER BY trading_symbol ASC", (selected_date,))
         records = cursor.fetchall()
         
-        # Calculate profit/loss for each stock and total profit/loss
         stocks_with_profit_loss = []
-        total_profit_loss = 0  # Initialize total profit/loss
-        total_profit_count = 0  # Count of profitable stocks
-        total_loss_count = 0  # Count of losing stocks
-        total_profit = 0  # Total profit from profitable stocks
-        total_loss = 0  # Total loss from losing stocks
+        total_profit_loss = 0
+        total_profit_count = 0
+        total_loss_count = 0
+        total_profit = 0
+        total_loss = 0
         
         for record in records:
-            date = record[1]  # Date
-            trading_symbol = record[2]  # Trading Symbol
-            total_qty = record[3]  # Total Quantity
-            avg_cost_price = record[4]  # Average Cost Price
-            last_traded_price = record[5]  # Last Traded Price
+            date = record[1]
+            trading_symbol = record[2]
+            total_qty = record[3]
+            avg_cost_price = record[4]
+            last_traded_price = record[5]
             
-            # Calculate Profit/Loss
             profit_loss = (last_traded_price - avg_cost_price) * total_qty
             
             stocks_with_profit_loss.append((date, trading_symbol, total_qty, avg_cost_price, last_traded_price, profit_loss))
-            total_profit_loss += profit_loss  # Accumulate total profit/loss
+            total_profit_loss += profit_loss
             
             if profit_loss > 0:
                 total_profit_count += 1
-                total_profit += profit_loss  # Accumulate total profit from profitable stocks
+                total_profit += profit_loss
             elif profit_loss < 0:
                 total_loss_count += 1
-                total_loss += abs(profit_loss)  # Accumulate total loss from losing stocks
+                total_loss += abs(profit_loss)
         
-        total_count = len(stocks_with_profit_loss)  # Count of stocks
+        total_count = len(stocks_with_profit_loss)
         
         cursor.close()
         conn.close()
@@ -60,7 +57,6 @@ def index():
                                total_profit_count=total_profit_count, total_loss_count=total_loss_count,
                                total_profit=total_profit, total_loss=total_loss)
 
-    # Fetch all unique dates from the database for the home page
     cursor.execute("SELECT DISTINCT date FROM stock_holding_dhan ORDER BY date ASC")
     dates = cursor.fetchall()
     
@@ -69,36 +65,50 @@ def index():
 
     return render_template('index.html', dates=dates)
 
+@app.route('/profit_loss_chart')
+def profit_loss_chart():
+    conn = psycopg2.connect(**db_params)
+    cursor = conn.cursor()
+    
+    # Fetching date-wise total profit/loss
+    cursor.execute("SELECT date, SUM((last_traded_price - avg_cost_price) * total_qty) AS total_profit_loss "
+                   "FROM stock_holding_dhan GROUP BY date ORDER BY date ASC")
+    results = cursor.fetchall()
+    
+    dates = [result[0] for result in results]
+    profits_losses = [result[1] for result in results]
+
+    cursor.close()
+    conn.close()
+
+    return render_template('profit_loss_chart.html', dates=dates, profits_losses=profits_losses)
+
 @app.route('/quantity_changes')
 def quantity_changes():
     conn = psycopg2.connect(**db_params)
     cursor = conn.cursor()
 
-    # Fetch all records from the database
     cursor.execute("SELECT * FROM stock_holding_dhan ORDER BY date ASC")
     records = cursor.fetchall()
 
-    # Organize data by trading symbol and date
     data_by_symbol = defaultdict(lambda: defaultdict(list))
     for record in records:
-        date = record[1]  # record[1] is the date
-        trading_symbol = record[2]  # record[2] is the trading symbol
-        total_qty = record[3]  # record[3] is the total quantity
+        date = record[1]
+        trading_symbol = record[2]
+        total_qty = record[3]
         data_by_symbol[trading_symbol][date].append(total_qty)
 
-    # Prepare a list of stocks with quantity differences including dates
     quantity_changes_list = []
 
     for symbol, dates in data_by_symbol.items():
-        sorted_dates = sorted(dates.keys())  # Sort dates for chronological order
+        sorted_dates = sorted(dates.keys())
         previous_date = None
         previous_qty = None
 
         for date in sorted_dates:
-            current_qty = dates[date][0]  # Get current quantity for that date
+            current_qty = dates[date][0]
             
             if previous_date is not None:
-                # Only append if there is a change in quantity and not marked as buy/sell
                 cursor.execute("SELECT * FROM stock_holding_dhan_portfolio_updates WHERE trading_symbol=%s AND previous_date=%s AND change_date=%s",
                                (symbol, previous_date, date))
                 marked_record = cursor.fetchone()
@@ -106,11 +116,11 @@ def quantity_changes():
                 if previous_qty != current_qty and marked_record is None:
                     quantity_changes_list.append((previous_date, date, symbol, previous_qty, current_qty))
             
-            previous_date = date  # Update previous date for next iteration
-            previous_qty = current_qty  # Update previous quantity for next iteration
+            previous_date = date
+            previous_qty = current_qty
 
-    cursor.close()  # Close the cursor here after all operations are done.
-    conn.close()  # Close the connection.
+    cursor.close()
+    conn.close()
 
     return render_template('index.html', quantity_changes=quantity_changes_list)
 
@@ -118,12 +128,11 @@ def quantity_changes():
 def mark_change():
     trading_symbol = request.form['trading_symbol']
     previous_date = request.form['previous_date']
-    change_date = request.form['current_date']  # Updated variable name
+    change_date = request.form['current_date']
 
     conn = psycopg2.connect(**db_params)
     cursor = conn.cursor()
 
-    # Insert into stock_holding_dhan_portfolio_updates table to mark this change as buy/sell
     cursor.execute("INSERT INTO stock_holding_dhan_portfolio_updates (trading_symbol, previous_date, change_date) VALUES (%s, %s, %s)",
                    (trading_symbol, previous_date, change_date))
     
@@ -135,4 +144,4 @@ def mark_change():
     return redirect(url_for('quantity_changes'))
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5003)  # Change host to 0.0.0.0 if needed.
+    app.run(debug=True, host='0.0.0.0', port=5003)
