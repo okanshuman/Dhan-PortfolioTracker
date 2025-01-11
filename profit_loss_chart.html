@@ -7,21 +7,14 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body {
-   display: flex;
-   flex-direction: column;
-   align-items: center;
+html, body {
+    height: 100%; /* Full height */
+    margin: 0; /* Remove default margin */
 }
 
 canvas {
-   max-width: 800px;
-   max-height: 400px;
-}
-
-.top-right {
-   position: absolute;
-   top: 20px;
-   right: 20px;
+    width: 100% !important; /* Full width */
+    height: 100% !important; /* Full height */
 }
 </style>
 
@@ -29,13 +22,13 @@ canvas {
 
 <body>
 
-<div style="height:50vh;width:80%;margin:auto;">
+<div style="height:100%; width:100%;">
    <!-- Canvas element for Chart.js line chart-->
    <canvas id="combinedChart"></canvas> <!-- Single canvas for combined chart -->
 
    <!-- Chart.js script to create line chart-->
    <script>
-const labels = {{ dates | tojson }};
+const labels = {{ dates | tojson }}; // Ensure this is an array of date strings
 const dailyTotalsDataValues = {{ daily_totals | tojson }};
 const changesInTotalsDataValues = {{ changes_in_totals | tojson }};
 
@@ -86,6 +79,7 @@ const config = {
    data: combinedData,
    options: {
        responsive: true,
+       maintainAspectRatio: false,
        plugins: {
            tooltip: {
                mode: 'index', // Show tooltips for all datasets at the hovered index
@@ -105,6 +99,7 @@ const config = {
                }
            },
            x: {
+               type: 'category', // Use category type for x-axis since we have date strings
                title: {
                    display: true,
                    text: 'Date'
@@ -120,7 +115,7 @@ const combinedChart = new Chart(
 );
 </script>
 
-<h2><a href="{{ url_for('index') }}">Back to Home</a></h2>
+</div>
 
 </body>
 </html>
