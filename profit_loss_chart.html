@@ -53,11 +53,17 @@ const combinedData = {
        },
        {
            label: 'Change in Total Profit/Loss',
-           backgroundColor: 'rgba(255,99,132,0.2)',
-           borderColor: 'rgba(255,99,132,1)',
            data: [null].concat(changesInTotalsDataValues), // Add null for the first point
-           fill: true,
-           tension: .1,
+           fill: false,
+           borderWidth: 2,
+           tension: 0.1,
+           segment: {
+               borderColor: (ctx) => {
+                   const value = ctx.chart.data.datasets[1].data[ctx.p0DataIndex];
+                   return value >= 0 ? 'rgba(75, 192, 75, 1)' : 'rgba(255, 99, 132, 1)';
+               },
+               borderDash: [0, 0], // Solid lines
+           }
        }
    ]
 };
