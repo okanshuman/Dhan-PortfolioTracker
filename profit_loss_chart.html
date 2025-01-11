@@ -59,8 +59,21 @@ const combinedData = {
            tension: 0.1,
            segment: {
                borderColor: (ctx) => {
-                   const value = ctx.chart.data.datasets[1].data[ctx.p0DataIndex];
-                   return value >= 0 ? 'rgba(75, 192, 75, 1)' : 'rgba(255, 99, 132, 1)';
+                   const currentValue = ctx.chart.data.datasets[1].data[ctx.p0DataIndex];
+                   const previousValue = ctx.chart.data.datasets[1].data[ctx.p0DataIndex - 1];
+
+                   // Determine color based on transition
+                   if (previousValue === undefined) {
+                       return 'rgba(75, 192, 75, 1)'; // Default to green if there's no previous value
+                   } else if (previousValue < 0 && currentValue >= 0) {
+                       return 'rgba(75, 192, 75, 1)'; // Green when changing from negative to positive
+                   } else if (previousValue > 0 && currentValue < 0) {
+                       return 'rgba(255, 99, 132, 1)'; // Red when changing from positive to negative
+                   } else if (currentValue >= 0) {
+                       return 'rgba(75, 192, 75, 1)'; // Green for positive values
+                   } else {
+                       return 'rgba(255, 99, 132, 1)'; // Red for negative values
+                   }
                },
                borderDash: [0, 0], // Solid lines
            }
