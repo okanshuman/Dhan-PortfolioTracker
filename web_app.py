@@ -1,8 +1,9 @@
+# web_app.py
 from flask import Flask, render_template, request, redirect, url_for
 import psycopg2
 from collections import defaultdict
 
-app = Flask(__name__, template_folder='.')  # Set template folder to current directory
+app = Flask(__name__, template_folder='.')
 
 # Database connection parameters
 db_params = {
@@ -71,17 +72,24 @@ def profit_loss_chart():
     cursor = conn.cursor()
     
     # Fetching date-wise total profit/loss
-    cursor.execute("SELECT date, SUM((last_traded_price - avg_cost_price) * total_qty) AS total_profit_loss "
+    cursor.execute("SELECT date, SUM((last_traded_price - avg_cost_price) * total_qty) AS daily_total "
                    "FROM stock_holding_dhan GROUP BY date ORDER BY date ASC")
     results = cursor.fetchall()
     
     dates = [result[0] for result in results]
-    profits_losses = [result[1] for result in results]
+    daily_totals = [result[1] for result in results]
+
+    # Calculate changes in totals over days
+    changes_in_totals = [daily_totals[i] - daily_totals[i - 1] for i in range(1, len(daily_totals))]
+    
+    # Prepare data for the first and second charts
+    changes_dates = dates[1:]  # Dates corresponding to changes
 
     cursor.close()
     conn.close()
 
-    return render_template('profit_loss_chart.html', dates=dates, profits_losses=profits_losses)
+    return render_template('profit_loss_chart.html', dates=dates, daily_totals=daily_totals,
+                           changes_dates=changes_dates, changes_in_totals=changes_in_totals)
 
 @app.route('/quantity_changes')
 def quantity_changes():

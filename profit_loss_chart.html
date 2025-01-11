@@ -7,24 +7,22 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-
 body {
-   display:flex;
-   flex-direction:column;
-   align-items:center;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
 }
 
 canvas {
-   max-width:800px;
-   max-height:400px;
+   max-width: 800px;
+   max-height: 400px;
 }
 
 .top-right {
-   position:absolute;
-   top:20px;
-   right:20px;
+   position: absolute;
+   top: 20px;
+   right: 20px;
 }
-   
 </style>
 
 </head>
@@ -33,40 +31,77 @@ canvas {
 
 <div style="height:50vh;width:80%;margin:auto;">
    <!-- Canvas element for Chart.js line chart-->
-   <canvas id="profitLossChart"></canvas>
+   <canvas id="combinedChart"></canvas> <!-- Single canvas for combined chart -->
 
    <!-- Chart.js script to create line chart-->
-   <<script>
-
+   <script>
 const labels = {{ dates | tojson }};
-const dataValues = {{ profits_losses | tojson }};
+const dailyTotalsDataValues = {{ daily_totals | tojson }};
+const changesInTotalsDataValues = {{ changes_in_totals | tojson }};
 
-const data = {
+// Prepare data for the combined chart
+const combinedData = {
    labels,
-   datasets: [{
-       label:'Total Profit/Loss',
-       backgroundColor:'rgba(75,192,192,0.2)',
-       borderColor:'rgba(75,192,192,1)',
-       data:dataValues,
-       fill:true,
-       tension:.1,
-   }]
+   datasets: [
+       {
+           label: 'Daily Total Profit/Loss',
+           backgroundColor: 'rgba(75,192,192,0.2)',
+           borderColor: 'rgba(75,192,192,1)',
+           data: dailyTotalsDataValues,
+           fill: true,
+           tension: .1,
+       },
+       {
+           label: 'Change in Total Profit/Loss',
+           backgroundColor: 'rgba(255,99,132,0.2)',
+           borderColor: 'rgba(255,99,132,1)',
+           data: [null].concat(changesInTotalsDataValues), // Add null for the first point
+           fill: true,
+           tension: .1,
+       }
+   ]
 };
 
-const config={
-   type:'line',
-   data:data,
+const config = {
+   type: 'line',
+   data: combinedData,
+   options: {
+       responsive: true,
+       plugins: {
+           tooltip: {
+               mode: 'index', // Show tooltips for all datasets at the hovered index
+               intersect: false // Allow tooltips to show even if not directly on a point
+           }
+       },
+       interaction: {
+           mode: 'index', // Enable index mode for hover interaction
+           intersect: false // Allow hover over any dataset
+       },
+       scales: {
+           y: {
+               beginAtZero: true,
+               title: {
+                   display: true,
+                   text: 'Amount'
+               }
+           },
+           x: {
+               title: {
+                   display: true,
+                   text: 'Date'
+               }
+           }
+       }
+   }
 };
 
-const profitLossChart=new Chart(
-   document.getElementById('profitLossChart'),
+const combinedChart = new Chart(
+   document.getElementById('combinedChart'),
    config
 );
-   </script>
+</script>
 
 <h2><a href="{{ url_for('index') }}">Back to Home</a></h2>
 
 </body>
-
 </html>
-
