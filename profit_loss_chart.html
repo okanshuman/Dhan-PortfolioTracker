@@ -29,7 +29,7 @@
    <script>
        const labels = {{ dates | tojson }}; // Ensure this is an array of date strings
        const dailyTotalsDataValues = {{ daily_totals | tojson }};
-       const changesInTotalsDataValues = [0].concat({{ changes_in_totals | tojson }}); // Prepend a zero for the first point
+       const changesInTotalsDataValues = [0].concat({{ changes_in_totals | tojson }}); // Prepend a zero for alignment
 
        // Prepare data for the combined chart
        const combinedData = {
@@ -38,10 +38,29 @@
                {
                    label: 'Daily Total Profit/Loss',
                    backgroundColor: 'rgba(75,192,192,0.2)',
-                   borderColor: 'rgba(75,192,192,1)',
                    data: dailyTotalsDataValues,
                    fill: true,
                    tension: .1,
+                   segment: {
+                       borderColor: (ctx) => {
+                           const index = ctx.p0DataIndex;
+                           if (index === 0) return 'rgba(75,192,192,1)'; // Default color for first point
+
+                           const previousChange = changesInTotalsDataValues[index - 1];
+                           const currentChange = changesInTotalsDataValues[index];
+
+                           // Determine color based on previous and current change amounts
+                           if (previousChange < 0 && currentChange >= 0) {
+                               return 'rgba(75,192,75,1)'; // Green when changing from negative to positive
+                           } else if (previousChange > 0 && currentChange < 0) {
+                               return 'rgba(255,99,132,1)'; // Red when changing from positive to negative
+                           } else if (currentChange >= 0) {
+                               return 'rgba(75,192,75,1)'; // Green for positive values
+                           } else {
+                               return 'rgba(255,99,132,1)'; // Red for negative values
+                           }
+                       }
+                   }
                }
            ]
        };
