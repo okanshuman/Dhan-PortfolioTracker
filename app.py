@@ -69,7 +69,7 @@ def fetch_and_store_data():
 
         cursor.close()
         conn.close()
-        send_telegram_message("DHAN: Data Updated and stored successfully.")
+        send_telegram_message("DHAN: Data Updated and stored successfully."+{date_today})
         print(f"Data stored successfully for {date_today}")
     else:
         print("Failed to retrieve holdings or no data available.")
@@ -83,7 +83,7 @@ def job():
         print("Today is a weekend. Skipping data fetch.")
 
 # Schedule the job every day at 3:27 PM IST
-schedule.every().day.at("15:27").do(job)
+schedule.every().day.at("16:30").do(job)
 send_telegram_message("DHAN App Started..")
 print("Scheduler started. Waiting for scheduled time...")
 
