@@ -103,7 +103,7 @@ def job():
         print("Today is a weekend. Skipping data fetch.")
 
 # Schedule the job every day at 4:00 PM IST
-schedule.every().day.at("20:33").do(job)
+schedule.every().day.at("16:00").do(job)
 send_telegram_message("DHAN App Started...")
 print("Scheduler started. Waiting for scheduled time...")
 
