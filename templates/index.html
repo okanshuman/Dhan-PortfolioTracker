@@ -262,13 +262,17 @@
         document.getElementById('dateForm').submit();
     }
 
-    // Initialize DataTables
+    // Initialize DataTables with no pagination
     $(document).ready(function() {
         $('#holdingsTable, #changesTable').DataTable({
             dom: 'Bfrtip',
             buttons: ['csv', 'excel'],
             responsive: true,
-            order: [[4, 'desc']]
+            order: [[4, 'desc']],
+            paging: false,         // Disable pagination
+            info: false,           // Hide entries count
+            scrollY: '60vh',       // Enable vertical scrolling
+            scrollCollapse: true
         });
     });
 
