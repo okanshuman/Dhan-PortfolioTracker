@@ -44,8 +44,6 @@ def index():
         total_profit_count = 0
         total_loss_count = 0
         total_portfolio_value = 0.0
-        top_gainer = None
-        top_loser = None
         
         for record in records:
             date = record[0]
@@ -74,16 +72,17 @@ def index():
             
             if profit_loss > 0:
                 total_profit_count += 1
-                if not top_gainer or profit_loss > top_gainer['profit_loss']:
-                    top_gainer = stock_data
             elif profit_loss < 0:
                 total_loss_count += 1
-                if not top_loser or profit_loss < top_loser['profit_loss']:
-                    top_loser = stock_data
         
         total_count = len(stocks_with_profit_loss)
         profit_percentage = (total_profit_count / total_count * 100) if total_count > 0 else 0
         loss_percentage = (total_loss_count / total_count * 100) if total_count > 0 else 0
+        
+        # Calculate top 5 winners and losers
+        sorted_stocks = sorted(stocks_with_profit_loss, key=lambda x: x['percent_change'], reverse=True)
+        top_winners = sorted_stocks[:5]
+        top_losers = sorted_stocks[-5:][::-1]  # Reverse to show biggest losers first
         
         # Calculate previous day's total for daily change
         prev_date = sorted(dates)[-2] if len(dates) > 1 else None
@@ -112,8 +111,8 @@ def index():
             dates=dates,
             total_portfolio_value=total_portfolio_value,
             daily_change_percent=daily_change_percent,
-            top_gainer=top_gainer,
-            top_loser=top_loser
+            top_winners=top_winners,
+            top_losers=top_losers
         )
 
     cursor.close()

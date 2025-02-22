@@ -154,22 +154,30 @@
                         <small>{{ total_count }} Stocks</small>
                     </div>
                 </div>
-                <div class="col-md-3 col-sm-6">
+                <div class="col-md-6">
                     <div class="dashboard-card">
-                        <h5><i class="fas fa-arrow-up stat-icon"></i>Top Gainer</h5>
-                        <h4>{{ top_gainer.symbol if top_gainer else 'N/A' }}</h4>
-                        <small class="text-success">
-                            {{ "%.2f"|format(top_gainer.percent_change) if top_gainer else '0.00' }}%
-                        </small>
-                    </div>
-                </div>
-                <div class="col-md-3 col-sm-6">
-                    <div class="dashboard-card">
-                        <h5><i class="fas fa-arrow-down stat-icon"></i>Top Loser</h5>
-                        <h4>{{ top_loser.symbol if top_loser else 'N/A' }}</h4>
-                        <small class="text-danger">
-                            {{ "%.2f"|format(top_loser.percent_change) if top_loser else '0.00' }}%
-                        </small>
+                        <div class="row">
+                            <div class="col-6">
+                                <h5><i class="fas fa-arrow-up stat-icon"></i>Top 5 Winners</h5>
+                                <ul class="list-unstyled">
+                                    {% for winner in top_winners %}
+                                        <li class="text-success">
+                                            {{ winner.symbol }}: {{ "%.2f"|format(winner.percent_change) }}%
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div class="col-6">
+                                <h5><i class="fas fa-arrow-down stat-icon"></i>Top 5 Losers</h5>
+                                <ul class="list-unstyled">
+                                    {% for loser in top_losers %}
+                                        <li class="text-danger">
+                                            {{ loser.symbol }}: {{ "%.2f"|format(loser.percent_change) }}%
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
