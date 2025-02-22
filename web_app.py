@@ -57,7 +57,7 @@ def index():
         if not records:
             cursor.close()
             conn.close()
-            return render_template('index.html', dates=dates, date_change_map={})
+            return render_template('index.html', dates=dates, date_change_map=date_change_map)
         
         stocks_with_profit_loss = []
         total_profit_loss = 0.0
@@ -159,18 +159,12 @@ def profit_loss_chart():
     
     dates = [result[0].strftime('%Y-%m-%d') for result in results]
     daily_totals = [float(result[1]) for result in results]
-    portfolio_values = [float(result[2]) for result in results]
     changes_in_totals = [daily_totals[i] - daily_totals[i-1] if i > 0 else 0 for i in range(len(daily_totals))]
-    
+
     cursor.close()
     conn.close()
 
-    return render_template('profit_loss_chart.html',
-        dates=dates,
-        daily_totals=daily_totals,
-        changes_in_totals=changes_in_totals,
-        portfolio_values=portfolio_values
-    )
+    return render_template('profit_loss_chart.html', dates=dates, daily_totals=daily_totals, changes_in_totals=changes_in_totals)
 
 @app.route('/quantity_changes')
 def quantity_changes():
