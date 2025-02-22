@@ -28,6 +28,8 @@
             --success-bg: #1a3c34;
             --danger-bg: #3c1a1a;
             --warning-bg: #3c2f1a;
+            --light-green: #90ee90;  /* Light green for profit */
+            --light-red: #ff9999;    /* Light red for loss */
         }
 
         .light-mode {
@@ -41,6 +43,8 @@
             --success-bg: #d4edda;
             --danger-bg: #f8d7da;
             --warning-bg: #fff3cd;
+            --light-green: #90ee90;  /* Light green for profit */
+            --light-red: #ff9999;    /* Light red for loss */
         }
 
         body {
@@ -149,6 +153,18 @@
         .table-warning {
             background-color: var(--warning-bg) !important;
             color: var(--text-color) !important;
+        }
+
+        .flatpickr-day.profit {
+            background-color: var(--light-green) !important;
+            color: #000 !important;
+            border-color: var(--light-green) !important;
+        }
+
+        .flatpickr-day.loss {
+            background-color: var(--light-red) !important;
+            color: #000 !important;
+            border-color: var(--light-red) !important;
         }
     </style>
 </head>
@@ -324,6 +340,19 @@
                     </tbody>
                 </table>
             </div>
+        {% else %}
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">No Data Available</h5>
+                            <p class="card-text">Please select a date from the calendar to view data.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         {% endif %}
 
         <!-- Stock Modal -->
@@ -357,7 +386,7 @@
             icon.classList.toggle('fa-moon');
         }
 
-        // Load saved theme
+        // Load saved theme and initialize calendar
         document.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('theme') === 'light') {
                 document.body.classList.add('light-mode');
@@ -365,6 +394,7 @@
             }
 
             const availableDates = {{ dates|tojson }};
+            const dateChangeMap = {{ date_change_map|tojson }};
             
             flatpickr("#calendar", {
                 inline: true,
@@ -381,6 +411,16 @@
                     form.appendChild(input);
                     document.body.appendChild(form);
                     form.submit();
+                },
+                onDayCreate: function(dObj, dStr, fp, dayElem) {
+                    const date = fp.formatDate(dayElem.dateObj, 'Y-m-d');
+                    if (dateChangeMap[date] !== undefined) {
+                        if (dateChangeMap[date] > 0) {
+                            dayElem.classList.add('profit');
+                        } else if (dateChangeMap[date] < 0) {
+                            dayElem.classList.add('loss');
+                        }
+                    }
                 }
             });
         });

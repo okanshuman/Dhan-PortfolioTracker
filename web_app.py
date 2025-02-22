@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 import psycopg2
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, date
 
 app = Flask(__name__, template_folder='templates')
 
@@ -21,8 +21,28 @@ def index():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute("SELECT DISTINCT date FROM stock_holding_dhan ORDER BY date ASC")
-    dates = [date[0].strftime('%Y-%m-%d') for date in cursor.fetchall()]
+    # Fetch all dates and their total portfolio value
+    cursor.execute("""
+        SELECT date, SUM(last_traded_price * total_qty) AS daily_value
+        FROM stock_holding_dhan 
+        GROUP BY date 
+        ORDER BY date ASC
+    """)
+    date_values = cursor.fetchall()
+    dates = [date[0].strftime('%Y-%m-%d') for date in date_values]
+    
+    # Calculate daily changes
+    date_change_map = {}
+    for i in range(len(date_values)):
+        current_date = date_values[i][0].strftime('%Y-%m-%d')
+        current_value = float(date_values[i][1])
+        if i == 0:
+            # First day has no previous day to compare, so change is 0
+            date_change_map[current_date] = 0.0
+        else:
+            prev_value = float(date_values[i-1][1])
+            daily_change = current_value - prev_value
+            date_change_map[current_date] = daily_change
 
     if request.method == 'POST':
         selected_date = request.form['date']
@@ -37,7 +57,7 @@ def index():
         if not records:
             cursor.close()
             conn.close()
-            return render_template('index.html', dates=dates)
+            return render_template('index.html', dates=dates, date_change_map={})
         
         stocks_with_profit_loss = []
         total_profit_loss = 0.0
@@ -115,12 +135,13 @@ def index():
             daily_change_percent=daily_change_percent,
             top_winners=top_winners,
             top_losers=top_losers,
-            total_investment=total_investment
+            total_investment=total_investment,
+            date_change_map=date_change_map
         )
 
     cursor.close()
     conn.close()
-    return render_template('index.html', dates=dates)
+    return render_template('index.html', dates=dates, date_change_map=date_change_map)
 
 @app.route('/profit_loss_chart')
 def profit_loss_chart():
@@ -139,7 +160,7 @@ def profit_loss_chart():
     dates = [result[0].strftime('%Y-%m-%d') for result in results]
     daily_totals = [float(result[1]) for result in results]
     portfolio_values = [float(result[2]) for result in results]
-    changes_in_totals = [daily_totals[i] - daily_totals[i-1] for i in range(1, len(daily_totals))]
+    changes_in_totals = [daily_totals[i] - daily_totals[i-1] if i > 0 else 0 for i in range(len(daily_totals))]
     
     cursor.close()
     conn.close()
@@ -176,33 +197,34 @@ def quantity_changes():
         previous_date = None
         previous_qty = None
 
-        for date in sorted_dates:
-            current_qty = dates_dict[date][0]
-            
+        for date_obj in sorted_dates:
+            current_qty = dates_dict[date_obj][0]
+
             if previous_date is not None:
                 cursor.execute("""
                     SELECT * FROM stock_holding_dhan_portfolio_updates 
                     WHERE trading_symbol=%s AND previous_date=%s AND change_date=%s
-                """, (symbol, previous_date, date))
+                """, (symbol, previous_date, date_obj))
                 marked_record = cursor.fetchone()
 
                 if previous_qty != current_qty and marked_record is None:
                     quantity_changes_list.append({
                         'prev_date': previous_date.strftime('%Y-%m-%d'),
-                        'curr_date': date.strftime('%Y-%m-%d'),
+                        'curr_date': date_obj.strftime('%Y-%m-%d'),
                         'symbol': symbol,
                         'prev_qty': previous_qty,
                         'curr_qty': current_qty,
                         'change': current_qty - previous_qty
                     })
-            
-            previous_date = date
+
+            previous_date = date_obj
             previous_qty = current_qty
 
     cursor.close()
     conn.close()
 
-    return render_template('index.html', quantity_changes=quantity_changes_list, dates=dates)
+    return render_template('index.html', quantity_changes=quantity_changes_list, dates=dates, date_change_map={})
+
 
 @app.route('/mark_change', methods=['POST'])
 def mark_change():
