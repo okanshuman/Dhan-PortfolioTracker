@@ -21,7 +21,6 @@ def index():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Always fetch available dates
     cursor.execute("SELECT DISTINCT date FROM stock_holding_dhan ORDER BY date ASC")
     dates = [date[0].strftime('%Y-%m-%d') for date in cursor.fetchall()]
 
@@ -44,6 +43,9 @@ def index():
         total_profit_loss = 0.0
         total_profit_count = 0
         total_loss_count = 0
+        total_portfolio_value = 0.0
+        top_gainer = None
+        top_loser = None
         
         for record in records:
             date = record[0]
@@ -53,26 +55,47 @@ def index():
             last_traded_price = float(record[4])
             
             profit_loss = (last_traded_price - avg_cost_price) * total_qty
+            current_value = last_traded_price * total_qty
             
-            stocks_with_profit_loss.append((
-                date,
-                trading_symbol,
-                total_qty,
-                avg_cost_price,
-                last_traded_price,
-                profit_loss
-            ))
+            stock_data = {
+                'date': date,
+                'symbol': trading_symbol,
+                'qty': total_qty,
+                'avg_cost': avg_cost_price,
+                'ltp': last_traded_price,
+                'profit_loss': profit_loss,
+                'current_value': current_value,
+                'percent_change': ((last_traded_price - avg_cost_price) / avg_cost_price * 100) if avg_cost_price > 0 else 0
+            }
             
+            stocks_with_profit_loss.append(stock_data)
             total_profit_loss += profit_loss
+            total_portfolio_value += current_value
             
             if profit_loss > 0:
                 total_profit_count += 1
+                if not top_gainer or profit_loss > top_gainer['profit_loss']:
+                    top_gainer = stock_data
             elif profit_loss < 0:
                 total_loss_count += 1
+                if not top_loser or profit_loss < top_loser['profit_loss']:
+                    top_loser = stock_data
         
         total_count = len(stocks_with_profit_loss)
         profit_percentage = (total_profit_count / total_count * 100) if total_count > 0 else 0
         loss_percentage = (total_loss_count / total_count * 100) if total_count > 0 else 0
+        
+        # Calculate previous day's total for daily change
+        prev_date = sorted(dates)[-2] if len(dates) > 1 else None
+        daily_change_percent = 0
+        if prev_date:
+            cursor.execute("""
+                SELECT SUM(last_traded_price * total_qty) 
+                FROM stock_holding_dhan 
+                WHERE date = %s
+            """, (prev_date,))
+            prev_value = float(cursor.fetchone()[0] or 0)
+            daily_change_percent = ((total_portfolio_value - prev_value) / prev_value * 100) if prev_value > 0 else 0
         
         cursor.close()
         conn.close()
@@ -86,10 +109,13 @@ def index():
             total_loss_count=total_loss_count,
             profit_percentage=profit_percentage,
             loss_percentage=loss_percentage,
-            dates=dates
+            dates=dates,
+            total_portfolio_value=total_portfolio_value,
+            daily_change_percent=daily_change_percent,
+            top_gainer=top_gainer,
+            top_loser=top_loser
         )
 
-    # GET request
     cursor.close()
     conn.close()
     return render_template('index.html', dates=dates)
@@ -100,15 +126,17 @@ def profit_loss_chart():
     cursor = conn.cursor()
     
     cursor.execute("""
-        SELECT date, SUM((last_traded_price - avg_cost_price) * total_qty) AS daily_total 
+        SELECT date, SUM((last_traded_price - avg_cost_price) * total_qty) AS daily_total,
+               SUM(last_traded_price * total_qty) AS portfolio_value
         FROM stock_holding_dhan 
         GROUP BY date 
         ORDER BY date ASC
     """)
     results = cursor.fetchall()
     
-    dates = [result[0].strftime('%Y-m-%d') for result in results]
+    dates = [result[0].strftime('%Y-%m-%d') for result in results]
     daily_totals = [float(result[1]) for result in results]
+    portfolio_values = [float(result[2]) for result in results]
     changes_in_totals = [daily_totals[i] - daily_totals[i-1] for i in range(1, len(daily_totals))]
     
     cursor.close()
@@ -117,7 +145,8 @@ def profit_loss_chart():
     return render_template('profit_loss_chart.html',
         dates=dates,
         daily_totals=daily_totals,
-        changes_in_totals=changes_in_totals
+        changes_in_totals=changes_in_totals,
+        portfolio_values=portfolio_values
     )
 
 @app.route('/quantity_changes')
@@ -125,7 +154,6 @@ def quantity_changes():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Fetch available dates
     cursor.execute("SELECT DISTINCT date FROM stock_holding_dhan ORDER BY date ASC")
     dates = [date[0].strftime('%Y-%m-%d') for date in cursor.fetchall()]
 
@@ -157,13 +185,14 @@ def quantity_changes():
                 marked_record = cursor.fetchone()
 
                 if previous_qty != current_qty and marked_record is None:
-                    quantity_changes_list.append((
-                        previous_date.strftime('%Y-%m-%d'),
-                        date.strftime('%Y-%m-%d'),
-                        symbol,
-                        previous_qty,
-                        current_qty
-                    ))
+                    quantity_changes_list.append({
+                        'prev_date': previous_date.strftime('%Y-%m-%d'),
+                        'curr_date': date.strftime('%Y-%m-%d'),
+                        'symbol': symbol,
+                        'prev_qty': previous_qty,
+                        'curr_qty': current_qty,
+                        'change': current_qty - previous_qty
+                    })
             
             previous_date = date
             previous_qty = current_qty
@@ -205,7 +234,7 @@ def stock_history(symbol):
     
     try:
         cursor.execute("""
-            SELECT date, last_traded_price 
+            SELECT date, last_traded_price, total_qty, avg_cost_price
             FROM stock_holding_dhan 
             WHERE trading_symbol = %s 
             ORDER BY date ASC
@@ -214,11 +243,15 @@ def stock_history(symbol):
         results = cursor.fetchall()
         dates = [result[0].strftime('%Y-%m-%d') for result in results]
         prices = [float(result[1]) for result in results]
+        quantities = [result[2] for result in results]
+        avg_costs = [float(result[3]) for result in results]
         
         return jsonify({
             'symbol': symbol,
             'dates': dates,
-            'prices': prices
+            'prices': prices,
+            'quantities': quantities,
+            'avg_costs': avg_costs
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
