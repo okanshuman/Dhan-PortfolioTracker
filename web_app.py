@@ -1,4 +1,3 @@
-# web_app.py
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 import psycopg2
 from collections import defaultdict
@@ -22,6 +21,10 @@ def index():
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    # Always fetch available dates
+    cursor.execute("SELECT DISTINCT date FROM stock_holding_dhan ORDER BY date ASC")
+    dates = [date[0].strftime('%Y-%m-%d') for date in cursor.fetchall()]
+
     if request.method == 'POST':
         selected_date = request.form['date']
         cursor.execute("""
@@ -33,14 +36,14 @@ def index():
         records = cursor.fetchall()
         
         if not records:
-            return redirect(url_for('index'))
+            cursor.close()
+            conn.close()
+            return render_template('index.html', dates=dates)
         
         stocks_with_profit_loss = []
         total_profit_loss = 0.0
         total_profit_count = 0
         total_loss_count = 0
-        total_profit = 0.0
-        total_loss = 0.0
         
         for record in records:
             date = record[0]
@@ -64,10 +67,8 @@ def index():
             
             if profit_loss > 0:
                 total_profit_count += 1
-                total_profit += profit_loss
             elif profit_loss < 0:
                 total_loss_count += 1
-                total_loss += abs(profit_loss)
         
         total_count = len(stocks_with_profit_loss)
         profit_percentage = (total_profit_count / total_count * 100) if total_count > 0 else 0
@@ -83,19 +84,14 @@ def index():
             total_profit_loss=total_profit_loss,
             total_profit_count=total_profit_count,
             total_loss_count=total_loss_count,
-            total_profit=total_profit,
-            total_loss=total_loss,
             profit_percentage=profit_percentage,
-            loss_percentage=loss_percentage
+            loss_percentage=loss_percentage,
+            dates=dates
         )
 
-    # GET request - fetch available dates
-    cursor.execute("SELECT DISTINCT date FROM stock_holding_dhan ORDER BY date ASC")
-    dates = [date[0].strftime('%Y-%m-%d') for date in cursor.fetchall()]
-    
+    # GET request
     cursor.close()
     conn.close()
-
     return render_template('index.html', dates=dates)
 
 @app.route('/profit_loss_chart')
@@ -111,9 +107,8 @@ def profit_loss_chart():
     """)
     results = cursor.fetchall()
     
-    dates = [result[0].strftime('%Y-%m-%d') for result in results]
+    dates = [result[0].strftime('%Y-m-%d') for result in results]
     daily_totals = [float(result[1]) for result in results]
-
     changes_in_totals = [daily_totals[i] - daily_totals[i-1] for i in range(1, len(daily_totals))]
     
     cursor.close()
@@ -130,6 +125,10 @@ def quantity_changes():
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # Fetch available dates
+    cursor.execute("SELECT DISTINCT date FROM stock_holding_dhan ORDER BY date ASC")
+    dates = [date[0].strftime('%Y-%m-%d') for date in cursor.fetchall()]
+
     cursor.execute("SELECT * FROM stock_holding_dhan ORDER BY date ASC")
     records = cursor.fetchall()
 
@@ -142,13 +141,13 @@ def quantity_changes():
 
     quantity_changes_list = []
 
-    for symbol, dates in data_by_symbol.items():
-        sorted_dates = sorted(dates.keys())
+    for symbol, dates_dict in data_by_symbol.items():
+        sorted_dates = sorted(dates_dict.keys())
         previous_date = None
         previous_qty = None
 
         for date in sorted_dates:
-            current_qty = dates[date][0]
+            current_qty = dates_dict[date][0]
             
             if previous_date is not None:
                 cursor.execute("""
@@ -172,7 +171,7 @@ def quantity_changes():
     cursor.close()
     conn.close()
 
-    return render_template('index.html', quantity_changes=quantity_changes_list)
+    return render_template('index.html', quantity_changes=quantity_changes_list, dates=dates)
 
 @app.route('/mark_change', methods=['POST'])
 def mark_change():

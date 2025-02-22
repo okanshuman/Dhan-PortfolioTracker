@@ -7,11 +7,13 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
         :root {
             --bg-color: #ffffff;
@@ -55,6 +57,17 @@
             max-width: 150px;
             margin: 0 auto;
             display: block;
+        }
+
+        .flatpickr-calendar {
+            background: var(--card-bg);
+            color: var(--text-color);
+            margin: 0 auto; /* Center the calendar horizontally */
+            display: block;
+        }
+
+        #calendar-container {
+            text-align: center; /* Ensure the container centers its content */
         }
     </style>
 </head>
@@ -205,15 +218,10 @@
                 <div class="card">
                     <div class="card-body text-center">
                         <h4 class="mb-4">Select Analysis Date</h4>
-                        <form id="dateForm" method="POST" action="/">
-                            <select name="date" class="form-select form-select-lg mb-3" onchange="submitForm()">
-                                <option value="" selected disabled>Choose a date...</option>
-                                {% for date in dates %}
-                                    <option value="{{ date }}">{{ date }}</option>
-                                {% endfor %}
-                            </select>
-                        </form>
-                        <div class="d-grid gap-3">
+                        <div id="calendar-container">
+                            <input type="text" id="calendar" class="form-control d-none">
+                        </div>
+                        <div class="d-grid gap-3 mt-4">
                             <a href="{{ url_for('quantity_changes') }}" class="btn btn-lg btn-outline-primary">
                                 <i class="fas fa-exchange-alt"></i> View Quantity Changes
                             </a>
@@ -257,10 +265,30 @@
         icon.classList.toggle('fa-sun');
     }
 
-    // Form Submission Handler
-    function submitForm() {
-        document.getElementById('dateForm').submit();
-    }
+    // Calendar Initialization
+    document.addEventListener('DOMContentLoaded', function() {
+        const availableDates = {{ dates|tojson }};
+        
+        flatpickr("#calendar", {
+            inline: true,
+            enable: availableDates,
+            dateFormat: "Y-m-d",
+            onChange: function(selectedDates, dateStr) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/';
+                
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'date';
+                input.value = dateStr;
+                
+                form.appendChild(input);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    });
 
     // Initialize DataTables with no pagination
     $(document).ready(function() {
@@ -269,9 +297,9 @@
             buttons: ['csv', 'excel'],
             responsive: true,
             order: [[4, 'desc']],
-            paging: false,         // Disable pagination
-            info: false,           // Hide entries count
-            scrollY: '60vh',       // Enable vertical scrolling
+            paging: false,
+            info: false,
+            scrollY: '60vh',
             scrollCollapse: true
         });
     });
@@ -283,12 +311,10 @@
         const symbol = button.getAttribute('data-symbol');
         const chartCanvas = document.getElementById('stockChart');
         
-        // Destroy existing chart if exists
         if (chartCanvas.chart) {
             chartCanvas.chart.destroy();
         }
 
-        // Fetch stock history and update chart
         fetch(`/stock_history/${symbol}`)
             .then(response => response.json())
             .then(data => {
