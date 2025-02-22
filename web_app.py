@@ -44,6 +44,7 @@ def index():
         total_profit_count = 0
         total_loss_count = 0
         total_portfolio_value = 0.0
+        total_investment = 0.0
         
         for record in records:
             date = record[0]
@@ -54,6 +55,7 @@ def index():
             
             profit_loss = (last_traded_price - avg_cost_price) * total_qty
             current_value = last_traded_price * total_qty
+            investment = avg_cost_price * total_qty
             
             stock_data = {
                 'date': date,
@@ -63,12 +65,14 @@ def index():
                 'ltp': last_traded_price,
                 'profit_loss': profit_loss,
                 'current_value': current_value,
-                'percent_change': ((last_traded_price - avg_cost_price) / avg_cost_price * 100) if avg_cost_price > 0 else 0
+                'percent_change': ((last_traded_price - avg_cost_price) / avg_cost_price * 100) if avg_cost_price > 0 else 0,
+                'investment': investment
             }
             
             stocks_with_profit_loss.append(stock_data)
             total_profit_loss += profit_loss
             total_portfolio_value += current_value
+            total_investment += investment
             
             if profit_loss > 0:
                 total_profit_count += 1
@@ -79,12 +83,10 @@ def index():
         profit_percentage = (total_profit_count / total_count * 100) if total_count > 0 else 0
         loss_percentage = (total_loss_count / total_count * 100) if total_count > 0 else 0
         
-        # Calculate top 5 winners and losers
         sorted_stocks = sorted(stocks_with_profit_loss, key=lambda x: x['percent_change'], reverse=True)
         top_winners = sorted_stocks[:5]
-        top_losers = sorted_stocks[-5:][::-1]  # Reverse to show biggest losers first
+        top_losers = sorted_stocks[-5:][::-1]
         
-        # Calculate previous day's total for daily change
         prev_date = sorted(dates)[-2] if len(dates) > 1 else None
         daily_change_percent = 0
         if prev_date:
@@ -112,7 +114,8 @@ def index():
             total_portfolio_value=total_portfolio_value,
             daily_change_percent=daily_change_percent,
             top_winners=top_winners,
-            top_losers=top_losers
+            top_losers=top_losers,
+            total_investment=total_investment
         )
 
     cursor.close()
